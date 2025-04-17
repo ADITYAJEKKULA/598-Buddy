@@ -1,0 +1,37 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+.Python
+
+# Django stuff
+*.log
+*.pot
+*.pyc
+*.pyo
+*.sqlite3
+db.sqlite3
+*.mo
+*.log
+*.tmp
+*.bak
+*.env
+
+# VS Code settings
+.vscode/
+
+# Static files
+static/
+staticfiles/
+
+# Node modules (if you ever use npm for Bootstrap or JS)
+node_modules/
+
+# OS / System files
+.DS_Store
+Thumbs.db
