@@ -1,0 +1,25 @@
+<!-- buddy/templates/about.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}About - Buddy{% endblock %}
+
+{% block content %}
+<h2>About the Project</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <h4>Aditya Jekkula</h4>
+        <img src="{% static 'images/aditya.jpg' %}" alt="Aditya" class="img-fluid rounded" width="200">
+        <p>
+            Aditya is a passionate developer and co-creator of the Buddy app. His background in aerospace and computer science drives innovation.
+        </p>
+    </div>
+    <div class="col-md-6">
+        <h4>Ibaad Mohammed</h4>
+        <img src="{% static 'images/me.jpg' %}" alt="Ibaad" class="img-fluid rounded" width="200">
+        <p>
+            Ibaad brings strong backend and system design skills to the project. Together, they created Buddy to simplify note-taking during live events.
+        </p>
+    </div>
+</div>
+{% endblock %}

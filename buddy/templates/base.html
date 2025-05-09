@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Buddy{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        /* Optional: Add custom style to ensure logout button aligns */
+        .navbar-nav .nav-item form .nav-link-button {
+            background: none;
+            border: none;
+            padding: 0; /* Reset padding */
+            color: rgba(0,0,0,.5); /* Match nav-link color */
+            text-decoration: none; /* Remove button underline */
+            display: block; /* Make it block like nav-link */
+            padding: 0.5rem 1rem; /* Match nav-link padding */
+            line-height: inherit; /* Inherit line height */
+            cursor: pointer;
+        }
+        .navbar-nav .nav-item form .nav-link-button:hover {
+            color: rgba(0,0,0,.7); /* Match nav-link hover */
+        }
+        .navbar-nav .nav-item form {
+             margin-bottom: 0; /* Remove potential form margin */
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="{% url 'home' %}">Buddy</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About</a></li>
+
+            {% if user.is_authenticated %}
+                {# Show Transcriptions only if logged in #}
+                <li class="nav-item"><a class="nav-link" href="{% url 'my_notes' %}">Transcriptions</a></li>
+
+                {# Logout Form/Button #}
+                <li class="nav-item">
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        {# Applied custom class for better styling/alignment #}
+                        <button type="submit" class="nav-link-button">Logout</button>
+                    </form>
+                </li>
+            {% else %}
+                {# Show Join and Login only if logged out #}
+                <li class="nav-item"><a class="nav-link" href="{% url 'join' %}">Join</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+            {% endif %}
+        </ul>
+        {% if user.is_authenticated %}
+            <span class="navbar-text">Welcome, {{ user.username }}!</span>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="container mt-4">
+    {% block content %}
+    {% endblock %}
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+
+{# This is the new block for page-specific JavaScript #}
+{% block custom_js %}{% endblock %}
+
+</body>
+</html>

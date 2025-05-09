@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Edit Note{% endblock %}
+
+{% block content %}
+<h2>Edit Note: {{ note.title }}</h2>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+        <label>Title:</label>
+        {{ form.title }}
+    </div>
+    <div class="form-group">
+        <label>Event:</label>
+        {{ form.event_text }}
+    </div>
+    <div class="form-group">
+        <label>Transcript text:</label>
+        {{ form.transcript_text }}
+    </div>
+    <div class="form-group">
+        <label>Tags:</label>
+        {{ form.tags_text }}
+        <small class="form-text text-muted">Separate tags with commas.</small>
+    </div>
+    <button type="submit" class="btn btn-primary">Update Note</button>
+    <a href="{% url 'my_notes' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

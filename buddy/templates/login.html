@@ -1,0 +1,20 @@
+<!-- buddy/templates/login.html -->
+{% extends 'base.html' %}
+
+{% block title %}Login - Buddy{% endblock %}
+
+{% block content %}
+<h2>Login</h2>
+
+{% if form.errors %}
+    <div class="alert alert-danger">Invalid credentials. Please try again.</div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-success">Login</button>
+</form>
+
+<p class="mt-3">Don't have an account? <a href="{% url 'join' %}">Join now</a>.</p>
+{% endblock %}

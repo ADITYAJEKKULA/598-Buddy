@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% block title %}Home - Buddy{% endblock %}
+
+{% block content %}
+<h2>Audio-to-Text Transcription</h2>
+
+<div class="mb-3">
+    <button id="recordBtn" class="btn btn-danger">Record</button>
+    <button id="pauseBtn" class="btn btn-warning" style="display: none;">Pause</button>
+    <button id="stopBtn" class="btn btn-secondary" style="display: none;">Stop</button>
+</div>
+
+<div class="form-group">
+    <label for="transcriptBox">Transcript</label>
+    <textarea id="transcriptBox" class="form-control" rows="6" placeholder="Transcript will appear here..."></textarea>
+</div>
+
+<div class="mt-3">
+    <button id="saveBtn" class="btn btn-success" disabled>Save</button>
+    <button id="discardBtn" class="btn btn-outline-danger" disabled>Discard</button>
+</div>
+
+<div class="modal fade" id="saveModal" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <form method="post" action="{% url 'save_transcript' %}" id="saveTranscriptForm">
+      {% csrf_token %}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Save Transcript</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="noteTitle">Title</label>
+                <input type="text" class="form-control" name="title" id="noteTitle" required>
+            </div>
+            <div class="form-group">
+                <label for="noteEvent">Event</label>
+                <input type="text" class="form-control" name="event" id="noteEvent">
+            </div>
+            <div class="form-group">
+                <label for="noteTags">Tags (comma-separated)</label>
+                <input type="text" class="form-control" name="tags" id="noteTags">
+            </div>
+            <input type="hidden" name="transcript_text" id="transcriptTextField">
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save Note</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %} {# End of content block #}
+
+
+{% block custom_js %} {# Start of custom_js block #}
+<script>
+    let mediaRecorder;
+    let audioChunks = [];
+
+    const recordBtn = document.getElementById("recordBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const transcriptBox = document.getElementById("transcriptBox");
+    const saveBtn = document.getElementById("saveBtn");
+    const discardBtn = document.getElementById("discardBtn");
+
+
+    recordBtn.addEventListener("click", async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    audioChunks.push(e.data);
+                }
+            };
+
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // Ensures MIME type
+                const formData = new FormData();
+                formData.append('audio_file', audioBlob, 'recording.webm'); // File name helps backend detect type
+
+                // Show loading message
+                transcriptBox.value = "Processing transcription, please wait...";
+                saveBtn.disabled = true;
+                discardBtn.disabled = true;
+
+                try {
+                    const response = await fetch("{% url 'transcribe_audio' %}", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    if (response.ok) {
+                        transcriptBox.value = data.transcription;
+                        // Enable save/discard buttons on success
+                        saveBtn.disabled = false;
+                        discardBtn.disabled = false;
+                    } else {
+                        transcriptBox.value = "Transcription failed: " + (data.error || "Unknown error");
+                    }
+
+                } catch (error) {
+                    transcriptBox.value = "Transcription failed: " + error.message;
+                }
+            };
+
+            mediaRecorder.start();
+            console.log("Recording started");
+
+            recordBtn.disabled = true;
+            pauseBtn.style.display = "inline-block";
+            stopBtn.style.display = "inline-block";
+
+        } catch (err) {
+            alert("Microphone access denied or unavailable.");
+            console.error(err);
+        }
+    });
+
+    pauseBtn.addEventListener("click", () => {
+        if (!mediaRecorder) return;
+
+        if (mediaRecorder.state === "recording") {
+            mediaRecorder.pause();
+            pauseBtn.textContent = "Resume";
+        } else if (mediaRecorder.state === "paused") {
+            mediaRecorder.resume();
+            pauseBtn.textContent = "Pause";
+        }
+    });
+
+    stopBtn.addEventListener("click", () => {
+        if (mediaRecorder && (mediaRecorder.state === "recording" || mediaRecorder.state === "paused")) {
+            mediaRecorder.stop();
+            recordBtn.disabled = false;
+            pauseBtn.style.display = "none";
+            stopBtn.style.display = "none";
+            pauseBtn.textContent = "Pause"; // reset label
+             // Disable save/discard buttons until new transcription is ready
+            saveBtn.disabled = true;
+            discardBtn.disabled = true;
+        }
+    });
+
+    // Enable save/discard buttons *after* successful transcription
+    // This part is handled inside the mediaRecorder.onstop async function now.
+
+
+    saveBtn.addEventListener("click", () => {
+        const currentTranscript = transcriptBox.value;
+        if (currentTranscript && currentTranscript !== "Processing transcription, please wait..." && !saveBtn.disabled) {
+             document.getElementById("transcriptTextField").value = currentTranscript;
+             $('#saveModal').modal('show');
+        } else {
+             console.log("Save button clicked but transcript is empty or processing.");
+        }
+    });
+
+
+    document.getElementById("saveTranscriptForm").addEventListener("submit", function (e) {
+    const transcript = document.getElementById("transcriptBox").value;
+    const transcriptField = document.getElementById("transcriptTextField");
+
+    if (transcript && transcriptField) {
+        transcriptField.value = transcript;
+        console.log("✅ Transcript set. Submitting form...");
+    } else {
+        console.error("❌ Transcript or hidden input not found!");
+        // Optionally prevent submission if transcript is missing
+        // e.preventDefault();
+    }
+    // No preventDefault — let the form actually submit
+});
+
+
+</script>
+{% endblock %} {# End of custom_js block #}

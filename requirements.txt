@@ -1,0 +1,9 @@
+asgiref==3.8.1
+Django==5.2
+psycopg2-binary==2.9.10
+sqlparse==0.5.3
+openai>=1.0.0
+python-dotenv
+psycopg2
+psycopg
+requests

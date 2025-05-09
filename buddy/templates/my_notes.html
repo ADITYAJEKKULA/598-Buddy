@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load note_filters %} {# Load the custom filter library #}
+{% block title %}My Notes{% endblock %}
+
+{% block content %}
+<h2>My Transcribed Notes</h2>
+
+{% if notes %}
+    <ul class="list-group">
+        {% for note in notes %}
+            <li class="list-group-item">
+                <strong>{{ note.title }}</strong><br>
+
+                {# Display Event if it exists #}
+                {% if note.event %}
+                     <strong>Event:</strong> {{ note.event.title }}<br>
+                {% endif %}
+
+                {# Display Tags if they exist #}
+                {% if note.tags.all %}
+                    <p class="mb-1"><strong>Tags:</strong>
+                    {% for tag in note.tags.all %}
+                        <span class="badge badge-info">{{ tag.name }}</span>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                    </p>
+                {% endif %}
+
+                {# Truncated Transcript and View Full Note link #}
+                {# Apply the truncate_lines filter and store the returned tuple #}
+                {% with truncated_result=note.transcript_text|truncate_lines:7 %} {# Use 7 lines as the limit #}
+                    <div style="white-space: pre-wrap; word-wrap: break-word; max-width: 100%;">
+                        {{ truncated_result.0 }} {# Display the truncated text (first element of the tuple) #}
+                    </div>
+                    {# Show 'View Full Note' link only if the text was actually truncated #}
+                    {% if truncated_result.1 %} {# Check the boolean flag (second element of the tuple) #}
+                        <a href="{% url 'view_note' note.id %}" class="btn btn-sm btn-link mt-2">View Full Note</a>
+                    {% endif %}
+                {% endwith %}
+
+                <br> {# Add a line break after the transcript/view link/truncated text #}
+                <small>Created on {{ note.created_at|date:"Y-m-d H:i" }}</small><br>
+
+                {# Action Buttons (Edit and Delete) #}
+                <a href="{% url 'edit_note' note.id %}" class="btn btn-sm btn-outline-primary mt-2">Edit</a>
+
+                {# Delete Form/Button #}
+                <form action="{% url 'delete_note' note.id %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger mt-2 ml-1" onclick="return confirm('Are you sure you want to delete this note?');">Delete</button>
+                </form>
+
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>You haven't saved any notes yet.</p>
+{% endif %}
+{% endblock %}
