@@ -58,6 +58,9 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 # Application definition
 
+import logging
+logging.warning("CSRF ORIGINS >>> %s", CSRF_TRUSTED_ORIGINS)
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
