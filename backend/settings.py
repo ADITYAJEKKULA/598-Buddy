@@ -54,6 +54,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://localhost:80',
     'https://humble-winner-wrx959g45j49hv65x-80.app.github.dev/',
     "http://34.10.213.107",
+    "https://buddy-vee6.onrender.com"
 ]
 # Application definition
 
