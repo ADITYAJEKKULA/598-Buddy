@@ -1,9 +1,12 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Home - Buddy{% endblock %}
 
 {% block content %}
 <h2>Audio-to-Text Transcription</h2>
 
+{% if user.is_authenticated %}
+<!-- Logged-in interface -->
 <div class="mb-3">
     <button id="recordBtn" class="btn btn-danger">Record</button>
     <button id="pauseBtn" class="btn btn-warning" style="display: none;">Pause</button>
@@ -20,43 +23,69 @@
     <button id="discardBtn" class="btn btn-outline-danger" disabled>Discard</button>
 </div>
 
+
+<!-- Save Modal with Preview -->
+
 <div class="modal fade" id="saveModal" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <form method="post" action="{% url 'save_transcript' %}" id="saveTranscriptForm">
-      {% csrf_token %}
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Save Transcript</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label for="noteTitle">Title</label>
-                <input type="text" class="form-control" name="title" id="noteTitle" required>
+    <div class="modal-dialog modal-lg" role="document"> <!-- Wider modal for better readability -->
+        <form method="post" action="{% url 'save_transcript' %}" id="saveTranscriptForm">
+            {% csrf_token %}
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Save Transcript</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="noteTitle">Title</label>
+                        <input type="text" class="form-control" name="title" id="noteTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="noteEvent">Event</label>
+                        <input type="text" class="form-control" name="event" id="noteEvent">
+                    </div>
+                    <div class="form-group">
+                        <label for="noteTags">Tags (comma-separated)</label>
+                        <input type="text" class="form-control" name="tags" id="noteTags">
+                    </div>
+
+                    <!-- 🔍 Transcript Preview -->
+                    <div class="form-group mt-4">
+                        <label><strong>Transcript Preview:</strong></label>
+                        <div id="previewTranscript" class="p-3 border rounded bg-light"
+                            style="white-space: pre-wrap; max-height: 200px; overflow-y: auto;">
+                            Transcript content will appear here...
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="transcript_text" id="transcriptTextField">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-info" onclick="downloadTranscript()">Download
+                        .txt</button>
+                    <button type="submit" class="btn btn-primary">Save Note</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="noteEvent">Event</label>
-                <input type="text" class="form-control" name="event" id="noteEvent">
-            </div>
-            <div class="form-group">
-                <label for="noteTags">Tags (comma-separated)</label>
-                <input type="text" class="form-control" name="tags" id="noteTags">
-            </div>
-            <input type="hidden" name="transcript_text" id="transcriptTextField">
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Save Note</button>
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-        </div>
-      </div>
-    </form>
-  </div>
+        </form>
+    </div>
 </div>
 
-{% endblock %} {# End of content block #}
 
+{% else %}
+<!-- Anonymous user interface -->
+<div class="alert alert-info">
+    <h5>Welcome to <strong>Buddy</strong> 🎙️</h5>
+    <p>Buddy helps you convert your speech into searchable notes. Record your voice, organize your thoughts by events
+        and tags, and revisit them anytime.</p>
+    <p>Please <a href="{% url 'join' %}">create an account</a> or <a href="{% url 'login' %}">log in</a> to start
+        transcribing!</p>
+</div>
+{% endif %}
+{% endblock %}
 
-{% block custom_js %} {# Start of custom_js block #}
+{% block custom_js %}
+{% if user.is_authenticated %}
 <script>
     let mediaRecorder;
     let audioChunks = [];
@@ -67,7 +96,6 @@
     const transcriptBox = document.getElementById("transcriptBox");
     const saveBtn = document.getElementById("saveBtn");
     const discardBtn = document.getElementById("discardBtn");
-
 
     recordBtn.addEventListener("click", async () => {
         try {
@@ -82,11 +110,10 @@
             };
 
             mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // Ensures MIME type
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                 const formData = new FormData();
-                formData.append('audio_file', audioBlob, 'recording.webm'); // File name helps backend detect type
+                formData.append('audio_file', audioBlob, 'recording.webm');
 
-                // Show loading message
                 transcriptBox.value = "Processing transcription, please wait...";
                 saveBtn.disabled = true;
                 discardBtn.disabled = true;
@@ -100,38 +127,32 @@
                     const data = await response.json();
                     if (response.ok) {
                         transcriptBox.value = data.transcription;
-                        // Enable save/discard buttons on success
                         saveBtn.disabled = false;
                         discardBtn.disabled = false;
+                        showToast("Transcription complete!");
                     } else {
                         transcriptBox.value = "Transcription failed: " + (data.error || "Unknown error");
                     }
-
                 } catch (error) {
                     transcriptBox.value = "Transcription failed: " + error.message;
                 }
             };
 
             mediaRecorder.start();
-            console.log("Recording started");
-
             recordBtn.disabled = true;
             pauseBtn.style.display = "inline-block";
             stopBtn.style.display = "inline-block";
-
         } catch (err) {
             alert("Microphone access denied or unavailable.");
-            console.error(err);
         }
     });
 
     pauseBtn.addEventListener("click", () => {
         if (!mediaRecorder) return;
-
         if (mediaRecorder.state === "recording") {
             mediaRecorder.pause();
             pauseBtn.textContent = "Resume";
-        } else if (mediaRecorder.state === "paused") {
+        } else {
             mediaRecorder.resume();
             pauseBtn.textContent = "Pause";
         }
@@ -143,43 +164,58 @@
             recordBtn.disabled = false;
             pauseBtn.style.display = "none";
             stopBtn.style.display = "none";
-            pauseBtn.textContent = "Pause"; // reset label
-             // Disable save/discard buttons until new transcription is ready
+            pauseBtn.textContent = "Pause";
             saveBtn.disabled = true;
             discardBtn.disabled = true;
         }
     });
 
-    // Enable save/discard buttons *after* successful transcription
-    // This part is handled inside the mediaRecorder.onstop async function now.
-
-
     saveBtn.addEventListener("click", () => {
         const currentTranscript = transcriptBox.value;
-        if (currentTranscript && currentTranscript !== "Processing transcription, please wait..." && !saveBtn.disabled) {
-             document.getElementById("transcriptTextField").value = currentTranscript;
-             $('#saveModal').modal('show');
-        } else {
-             console.log("Save button clicked but transcript is empty or processing.");
+        if (currentTranscript && currentTranscript !== "Processing transcription, please wait...") {
+            document.getElementById("transcriptTextField").value = currentTranscript;
+            document.getElementById("previewTranscript").textContent = currentTranscript; // ⭐ PREVIEW UPDATED
+            $('#saveModal').modal('show');
         }
     });
 
+    discardBtn.addEventListener("click", () => {
+        transcriptBox.value = "";
+        transcriptBox.placeholder = "Transcript will appear here...";
+        saveBtn.disabled = true;
+        discardBtn.disabled = true;
+        showToast("Transcript discarded.");
+    });
 
-    document.getElementById("saveTranscriptForm").addEventListener("submit", function (e) {
-    const transcript = document.getElementById("transcriptBox").value;
-    const transcriptField = document.getElementById("transcriptTextField");
+    document.getElementById("saveTranscriptForm").addEventListener("submit", function () {
+        const transcript = transcriptBox.value;
+        document.getElementById("transcriptTextField").value = transcript;
+        showToast("Transcript saved!");
+    });
 
-    if (transcript && transcriptField) {
-        transcriptField.value = transcript;
-        console.log("✅ Transcript set. Submitting form...");
-    } else {
-        console.error("❌ Transcript or hidden input not found!");
-        // Optionally prevent submission if transcript is missing
-        // e.preventDefault();
+    function showToast(message) {
+        const toastBody = document.getElementById("toast-body");
+        toastBody.textContent = message;
+        $('#liveToast').toast('show');
     }
-    // No preventDefault — let the form actually submit
-});
 
+    function downloadTranscript() {
+    const title = document.getElementById("noteTitle").value.trim() || "Transcript";
+    const transcript = document.getElementById("transcriptBox").value;
 
+    if (!transcript) {
+        alert("Transcript is empty. Nothing to download.");
+        return;
+    }
+
+    const blob = new Blob([transcript], { type: "text/plain" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${title}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 </script>
-{% endblock %} {# End of custom_js block #}
+{% endif %}
+{% endblock %}

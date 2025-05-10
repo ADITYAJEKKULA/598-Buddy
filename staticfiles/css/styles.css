@@ -1,0 +1,90 @@
+/* Global Typography & Background */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+/* Headings */
+h1, h2, h3 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+/* Cards */
+.card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Buttons */
+.btn {
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+    transform: scale(1.02);
+    opacity: 0.9;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #bb2d3b;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+/* Badges / Tags */
+.badge-info {
+    background-color: #17a2b8;
+    color: #fff;
+    padding: 0.4em 0.6em;
+    margin: 0 0.2em;
+    font-size: 0.85em;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.badge-info:hover {
+    background-color: #138496;
+    cursor: pointer;
+}
+
+/* Transcript text */
+.transcript-box {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border: 1px solid #ccc;
+    padding: 1rem;
+    border-radius: 6px;
+    background-color: #fff;
+}
+
+/* Form Controls */
+.form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    border-color: #28a745;
+}
+
+/* Navbar overrides */
+.navbar-light .navbar-nav .nav-link {
+    transition: color 0.3s ease;
+}
+
+.navbar-light .navbar-nav .nav-link:hover {
+    color: #0056b3;
+}

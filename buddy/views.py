@@ -11,6 +11,7 @@ import json
 import copy
 import requests
 from django.conf import settings
+from django.db.models import Prefetch
 
 def home(request):
     return render(request, 'home.html')
@@ -113,30 +114,88 @@ def delete_note(request, note_id):
     messages.success(request, "Note deleted successfully.")
     return redirect('my_notes')
 
-# def server_info(request):
-#     try:
-#         server_geodata_response = requests.get('https://ipwhois.app/json/')
-#         server_geodata_response.raise_for_status()
-#         server_geodata = server_geodata_response.json()
-#     except requests.exceptions.RequestException as e:
-#         server_geodata = {"error": f"Could not retrieve geolocation data: {str(e)}"}
-#     except json.JSONDecodeError:
-#         server_geodata = {"error": "Could not decode geolocation JSON response."}
-
-#     settings_dump = {}
-#     for attr in dir(settings):
-#         if attr.isupper(): 
-#             try:
-#                 json.dumps(getattr(settings, attr)) 
-#                 settings_dump[attr] = getattr(settings, attr)
-#             except TypeError:
-#                 settings_dump[attr] = str(getattr(settings, attr))
-
-#     response_content = f"Server Geolocation Data:\n{json.dumps(server_geodata, indent=2)}\n\nDjango Settings (Uppercase):\n{json.dumps(settings_dump, indent=2, default=str)}"
-    
-#     return HttpResponse(response_content, content_type="text/plain")
-
 def server_info(request):
-    server_geodata = requests.get('https://ipwhois.app/json/').json()
-    settings_dump = settings.__dict__
-    return HttpResponse("{}{}".format(server_geodata, settings_dump))
+    try:
+        server_geodata_response = requests.get('https://ipwhois.app/json/')
+        server_geodata_response.raise_for_status()
+        server_geodata = server_geodata_response.json()
+    except requests.exceptions.RequestException as e:
+        server_geodata = {"error": f"Could not retrieve geolocation data: {str(e)}"}
+    except json.JSONDecodeError:
+        server_geodata = {"error": "Could not decode geolocation JSON response."}
+
+    settings_dump = {}
+    for attr in dir(settings):
+        if attr.isupper(): 
+            try:
+                json.dumps(getattr(settings, attr)) 
+                settings_dump[attr] = getattr(settings, attr)
+            except TypeError:
+                settings_dump[attr] = str(getattr(settings, attr))
+
+    response_content = f"Server Geolocation Data:\n{json.dumps(server_geodata, indent=2)}\n\nDjango Settings (Uppercase):\n{json.dumps(settings_dump, indent=2, default=str)}"
+    
+    return HttpResponse(response_content, content_type="text/plain")
+
+
+from django.db.models import Prefetch
+
+@login_required
+def notes_by_event(request):
+    selected_event_id = request.GET.get("event_id")
+    selected_tag = request.GET.get("tag")
+
+    events = Event.objects.filter(user=request.user)
+    notes = Note.objects.filter(user=request.user)
+
+    if selected_event_id:
+        notes = notes.filter(event__id=selected_event_id)
+
+    if selected_tag:
+        notes = notes.filter(tags__name=selected_tag)
+
+    return render(request, "notes_by_event.html", {
+        "events": events,
+        "selected_event_id": int(selected_event_id) if selected_event_id else None,
+        "selected_tag": selected_tag,
+        "notes": notes
+    })
+
+
+
+@login_required
+def notes_by_event(request):
+    selected_event_id = request.GET.get("event_id")
+    selected_tag = request.GET.get("tag")
+
+    events = Event.objects.filter(user=request.user)
+    notes = Note.objects.filter(user=request.user)
+
+    if selected_event_id:
+        notes = notes.filter(event__id=selected_event_id)
+
+    if selected_tag:
+        notes = notes.filter(tags__name=selected_tag)
+
+    return render(request, "notes_by_event.html", {
+        "events": events,
+        "notes": notes.distinct(),  # Prevent duplicates from many-to-many
+        "selected_event_id": selected_event_id,
+        "selected_tag": selected_tag
+    })
+
+from django.http import HttpResponse
+
+@login_required
+def download_note(request, note_id):
+    note = get_object_or_404(Note, id=note_id, user=request.user)
+    filename = f"{note.title or 'transcript'}.txt"
+    response = HttpResponse(note.transcript_text, content_type='text/plain')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+# def server_info(request):
+#     server_geodata = requests.get('https://ipwhois.app/json/').json()
+#     settings_dump = settings.__dict__
+#     return HttpResponse("{}{}".format(server_geodata, settings_dump))

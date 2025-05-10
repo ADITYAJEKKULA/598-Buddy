@@ -1,7 +1,6 @@
 from django.urls import path
-from . import views
+from . import views, api_views
 from django.contrib.auth import views as auth_views
-from . import api_views
 from buddy import views as buddy_views
 
 urlpatterns = [
@@ -34,5 +33,11 @@ urlpatterns = [
     # path("api/transcribe/", api_views.transcribe_audio, name="whisper_transcribe"),
     # path('server_info/', views.server_info, name='server_info'),
 
-    path('server_info/', buddy_views.server_info),
+    path('server_info/', views.server_info),
+
+    path('events/', views.notes_by_event, name='notes_by_event'),
+
+    path('notes/download/<int:note_id>/', views.download_note, name='download_note'),
+
+
 ]

@@ -4,14 +4,22 @@
 
 {% block content %}
     <h2>{{ note.title }}</h2>
-    <p><strong>Event:</strong> {% if note.event %}
+
+    {% if note.event %}
         <p><strong>Event:</strong> {{ note.event.title }}</p>
-    {% endif %}</p>
+    {% endif %}
+
     <div class="card">
         <div class="card-body" style="white-space: pre-wrap;">
             {{ note.transcript_text }}
         </div>
     </div>
+
     <p><small>Created: {{ note.created_at|date:"Y-m-d H:i" }}</small></p>
-    <a href="{% url 'my_notes' %}" class="btn btn-secondary mt-3">Back</a>
+
+    {% if request.GET.from == "events" %}
+        <a href="{% url 'notes_by_event' %}" class="btn btn-secondary mt-3">← Back to Events</a>
+    {% else %}
+        <a href="{% url 'my_notes' %}" class="btn btn-secondary mt-3">← Back to Transcriptions</a>
+    {% endif %}
 {% endblock %}

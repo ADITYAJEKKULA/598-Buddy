@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,57 +6,71 @@
     <title>{% block title %}Buddy{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    
     <style>
-        /* Optional: Add custom style to ensure logout button aligns */
         .navbar-nav .nav-item form .nav-link-button {
             background: none;
             border: none;
-            padding: 0; /* Reset padding */
-            color: rgba(0,0,0,.5); /* Match nav-link color */
-            text-decoration: none; /* Remove button underline */
-            display: block; /* Make it block like nav-link */
-            padding: 0.5rem 1rem; /* Match nav-link padding */
-            line-height: inherit; /* Inherit line height */
+            padding: 0.5rem 1rem;
+            color: rgba(0,0,0,.5);
             cursor: pointer;
         }
         .navbar-nav .nav-item form .nav-link-button:hover {
-            color: rgba(0,0,0,.7); /* Match nav-link hover */
+            color: rgba(0,0,0,.7);
         }
-        .navbar-nav .nav-item form {
-             margin-bottom: 0; /* Remove potential form margin */
+
+        .toast {
+            min-width: 250px;
+            border-radius: 8px;
+        }
+
+        /* Optional: make toast smooth on dark mode */
+        .dark-mode .toast {
+            background-color: #333;
+            color: #eee;
         }
     </style>
 </head>
+
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <a class="navbar-brand" href="{% url 'home' %}">Buddy</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
     </button>
+    
     <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav mr-auto">
             <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About</a></li>
 
             {% if user.is_authenticated %}
-                {# Show Transcriptions only if logged in #}
                 <li class="nav-item"><a class="nav-link" href="{% url 'my_notes' %}">Transcriptions</a></li>
-
-                {# Logout Form/Button #}
+                <li class="nav-item"><a class="nav-link" href="{% url 'notes_by_event' %}">Events</a></li>
+                
                 <li class="nav-item">
                     <form action="{% url 'logout' %}" method="post">
                         {% csrf_token %}
-                        {# Applied custom class for better styling/alignment #}
                         <button type="submit" class="nav-link-button">Logout</button>
                     </form>
                 </li>
             {% else %}
-                {# Show Join and Login only if logged out #}
                 <li class="nav-item"><a class="nav-link" href="{% url 'join' %}">Join</a></li>
                 <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
             {% endif %}
+
+            <!-- Dark Mode Toggle -->
+            <li class="nav-item">
+                <button class="btn btn-sm btn-outline-secondary ml-2" onclick="toggleDarkMode()">🌓 Dark Mode</button>
+            </li>
         </ul>
+
         {% if user.is_authenticated %}
             <span class="navbar-text">Welcome, {{ user.username }}!</span>
         {% endif %}
@@ -67,11 +82,49 @@
     {% endblock %}
 </div>
 
-<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+<!-- Bootstrap JS + jQuery -->
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
 
-{# This is the new block for page-specific JavaScript #}
+<!-- Toast Container -->
+<div aria-live="polite" aria-atomic="true" style="position: fixed; top: 1rem; right: 1rem; z-index: 9999;">
+    <div class="toast" id="liveToast" role="alert" data-delay="3000">
+        <div class="toast-header">
+            <strong class="mr-auto">Buddy</strong>
+            <small class="text-muted">just now</small>
+            <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="toast-body" id="toast-body">
+            <!-- filled via JS -->
+        </div>
+    </div>
+</div>
+
+<!-- Custom JS -->
+<script>
+    // 🌙 Dark Mode
+    function toggleDarkMode() {
+        document.body.classList.toggle("dark-mode");
+        localStorage.setItem("dark-mode", document.body.classList.contains("dark-mode"));
+    }
+
+    window.onload = function () {
+        if (localStorage.getItem("dark-mode") === "true") {
+            document.body.classList.add("dark-mode");
+        }
+    };
+
+    // ✅ Toast Function
+    function showToast(message) {
+        const toastBody = document.getElementById("toast-body");
+        toastBody.textContent = message;
+        $('#liveToast').toast('show');
+    }
+</script>
+
 {% block custom_js %}{% endblock %}
 
 </body>
